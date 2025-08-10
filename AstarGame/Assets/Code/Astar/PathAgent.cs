@@ -1,12 +1,24 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Code.Astar
 {
-    public class PathAgent : MonoBehaviour
+    public abstract class PathAgent : MonoBehaviour
     {
         [SerializeField] private BakedDataSO bakedData;
+
+        private Dictionary<Type, IAgentCompo> _agentCompoDic = new Dictionary<Type, IAgentCompo>();
+
+        public virtual void Awake()
+        {
+            GetComponentsInChildren<IAgentCompo>().ToList().ForEach(v => {
+                _agentCompoDic.Add(v.GetType(), v);
+                v.Init(this);
+            });
+        }
 
         public int GetPath(Vector3Int startPosition, Vector3Int destination, Vector3[] pointArr)
         {
@@ -124,7 +136,12 @@ namespace Code.Astar
 
             return path;
         }
-
         private float CalcH(Vector3Int start, Vector3Int end) => Vector3Int.Distance(start, end);
+
+        public T GetCompo<T>() where T : IAgentCompo
+        {
+            if (_agentCompoDic.TryGetValue(typeof(T), out IAgentCompo component)) return (T)component;
+            else return default(T);
+        }
     }
 }
